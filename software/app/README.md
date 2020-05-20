@@ -2,7 +2,7 @@
 
 ### ***** WORK IN PROGRESS *****
 
-Este trabalho consiste na implementação de um escalonador preemptivo. A ideia é utilizar o algoritmo Razão Monotonica para que se possa gerar as simulações e analisar resultados. Para realizar o trabalho será necessário definir um modelo de estados baseado em FSM (*Finite State Machine*) que permita a gerencia de aplicações multithread. Deve-se fazer o uso de recursos periféricos ao processador como temporizadores e tratadores também.
+Este trabalho consiste na implementação de um escalonador preemptivo. A ideia é utilizar o algoritmo Earliest Deadline First para que se possa gerar as simulações e analisar resultados. Para realizar o trabalho será necessário definir um modelo de estados baseado em FSM (*Finite State Machine*) que permita a gerencia de aplicações multithread. Deve-se fazer o uso de recursos periféricos ao processador como temporizadores e tratadores também.
 
 
 ## Definições
