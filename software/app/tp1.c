@@ -10,14 +10,14 @@
 #define RUNNING 1
 #define BLOCKED 2
 
-char mem_pool[16384];
+char memPool[16384];
 
-typedef uint32_t jmp_buf[20];
-int32_t setjmp(jmp_buf env);
-void longjmp(jmp_buf env, int32_t val);
+typedef uint32_t jmpBuf[20];
+int32_t setjmp(jmpBuf env);
+void longjmp(jmpBuf env, int32_t val);
 
 /***** Global Variables *****/
-static jmp_buf jmp[N_TASKS], end;
+static jmpBuf jmp[N_TASKS], end;
 static int cur;
 
 struct list *taskList; // List contains all the tasks 
@@ -41,7 +41,7 @@ struct task {
     int period;
     int deadline;
     int computeCount; // value will be between 0 and compute-1.
-	int n_computeCount; // if zero, no over-deadline computation needed, if -2 (e.g) task is over-deadline and owes 2 computations
+	int nComputeCount; // if zero, no over-deadline computation needed, if -2 (e.g) task is over-deadline and owes 2 computations
     int status;
     int runTime;
 };
@@ -52,7 +52,7 @@ void printList (struct list *list){
     printf("id |  c  |  p  |  d  | count | nCount | status\n");
 	for (i = 0 ; i< list_count(list) ; i++){
 		printTask = list_get(list,i);
-		printf(" %d |  %d  |  %d  |  %d  | %d | %d | %d\n",printTask->id, printTask->compute,printTask->period,printTask->deadline,printTask->computeCount,printTask->n_computeCount,printTask->status);
+		printf(" %d |  %d  |  %d  |  %d  | %d | %d | %d\n",printTask->id, printTask->compute,printTask->period,printTask->deadline,printTask->computeCount,printTask->nComputeCount,printTask->status);
 	}
     printf("\n");
 }
@@ -88,7 +88,7 @@ void printTaskList(){
     }
 }
 
-void context_switch(int taskId){
+void contextSwitch(int taskId){
     while(interrupt == 0){
         printf("");
     }
@@ -100,7 +100,7 @@ void context_switch(int taskId){
 }
 
 
-void bubble_sort_ready(void)
+void bubbleSortReady(void)
 {
     int k, j;
     for (k = 1; k < list_count(readyList); k++)
@@ -112,7 +112,7 @@ void bubble_sort_ready(void)
 			struct task *task2 = list_get(readyList,j+1);
 
 			// Who's deadline is nearest
-            if(task1->n_computeCount == 0 && task2->n_computeCount == 0){
+            if(task1->nComputeCount == 0 && task2->nComputeCount == 0){
                 if (task1->deadline - (time - task1->period * task1->runTime)  >  task2->deadline - (time - task2->period * task2->runTime)) 
                 {
                     list_set(readyList,task2,j);
@@ -127,13 +127,13 @@ void bubble_sort_ready(void)
                 }
             }
 			// task2 is over deadline?
-            if (task1->n_computeCount == 0 && task2->n_computeCount < 0) // this condition needs to be reviewed
+            if (task1->nComputeCount == 0 && task2->nComputeCount < 0) // this condition needs to be reviewed
             {   
                 list_set(readyList,task2,j);
 				list_set(readyList,task1,j+1);
             }
 			// If both tasks are over-deadline, Who has the lower ID?
-            if (( task1->n_computeCount < 0 && task2->n_computeCount < 0 ) && (task1->id  >  task2->id) ) 
+            if (( task1->nComputeCount < 0 && task2->nComputeCount < 0 ) && (task1->id  >  task2->id) ) 
             {
                 list_set(readyList,task2,j);
 				list_set(readyList,task1,j+1);
@@ -164,7 +164,7 @@ void addNewTask(){ // Test if new tasks are ready to be included in readyList
 					{
 						printf("\nNew Task: %c(%d,%d) Already in list \n", (newTask->id+65), newTask->compute, newTask->deadline);
 						
-						auxTask->n_computeCount = (auxTask->compute - auxTask->computeCount) * -1; //tratar caso n compute time seja diferente de 0
+						auxTask->nComputeCount = (auxTask->compute - auxTask->computeCount) * -1; //tratar caso n compute time seja diferente de 0
 						auxTask->computeCount = 0;
                         auxTask->status = READY;
 						updateElement(auxTask,readyList);
@@ -192,7 +192,7 @@ void advanceTime() {
 	addNewTask();
 
 	//Sort readyList
-	bubble_sort_ready();
+	bubbleSortReady();
     for(i=1; i<N_TASKS-1;i++){
         taskModel = list_get(readyList, i);
         taskModel->status = READY;
@@ -208,10 +208,10 @@ void advanceTime() {
 	struct task *runningTask = list_get(readyList,0);
     if(runningTask != NULL){
         runningTask->status =  RUNNING;
-        if (runningTask->n_computeCount != 0){
-		    runningTask->n_computeCount++;
+        if (runningTask->nComputeCount != 0){
+		    runningTask->nComputeCount++;
             list_append(taskPrintList, (int *)(runningTask->id + 97));
-            if(runningTask->n_computeCount == 0){  // this code needs to be revised -> aA is an interruption?
+            if(runningTask->nComputeCount == 0){  // this code needs to be revised -> aA is an interruption?
                 taskEnded = true; 
             }
 		    updateElement(runningTask, readyList);
@@ -233,11 +233,11 @@ void advanceTime() {
             }
             lastTaskId = runningTask->id;
             lastTaskEnded = taskEnded;
-            context_switch(runningTask->id);
+            contextSwitch(runningTask->id);
         } else if(runningTask->id != lastTaskId && lastTaskEnded == true){
             lastTaskId = runningTask->id;
             lastTaskEnded = taskEnded;  
-            context_switch(runningTask->id);
+            contextSwitch(runningTask->id);
         } else{
             lastTaskEnded = taskEnded;  
         }
@@ -245,12 +245,12 @@ void advanceTime() {
         lastTaskId = 3;
         lastTaskEnded = taskEnded;
         list_append(taskPrintList, (int *)46);
-        context_switch(3);
+        contextSwitch(3);
     } 
 	// Actually run the task
 }
 
-void idle_task()
+void idleTask()
 {
 	volatile char cushion[1000];	/* reserve some stack space */
 	cushion[0] = '@';		/* don't optimize my cushion away */
@@ -267,13 +267,13 @@ void idle_task()
 	}
 }
 
-void task2_func()
+void taskCFunc()
 {
 	volatile char cushion[1000];	/* reserve some stack space */
 	cushion[0] = '@';		/* don't optimize my cushion away */
 
 	if (!setjmp(jmp[2]))
-		idle_task();
+		idleTask();
 
 	while (1) {			/* thread body */
 		
@@ -283,13 +283,13 @@ void task2_func()
 	}
 }
 
-void task1_func()
+void taskBFunc()
 {
 	volatile char cushion[1000];	/* reserve some stack space */
 	cushion[0] = '@';		/* don't optimize my cushion away */
 
 	if (!setjmp(jmp[1]))
-		task2_func();
+		taskCFunc();
 
 	while (1) {			/* thread body */
 		
@@ -299,13 +299,13 @@ void task1_func()
 	}
 }
 
-void task0_func()
+void taskAFunc()
 {
 	volatile char cushion[1000];	/* reserve some stack space */
 	cushion[0] = '@';		/* don't optimize my cushion away */
 
 	if (!setjmp(jmp[0]))
-		task1_func();
+		taskBFunc();
 
 	while (1) {			/* thread body */
 		
@@ -350,7 +350,7 @@ int main(void)
 {   
     int32_t i =0;
     /* intialize heap because of list use*/
-    heap_init((uint32_t *)&mem_pool, sizeof(mem_pool));
+    heap_init((uint32_t *)&memPool, sizeof(memPool));
 
     taskList = list_init();
     readyList = list_init();
@@ -391,7 +391,7 @@ int main(void)
     printf("Total time: %d", totalTime);
     enableTimer();
     if (!setjmp(end))
-        task0_func();
+        taskAFunc();
     printf("Simulation result: ");
     printTaskList();
 	return 0;
